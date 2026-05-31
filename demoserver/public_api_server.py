@@ -10,7 +10,7 @@ mcp = FastMCP("police-incidents", dependencies=["requests"])
 
 def get_latest_incidents() -> str:
     """Fetch the latest incidents from the Politiet API"""
-    url = 'https://api.politiet.no/politiloggen/v1/messages'
+    url = 'https://api.politiloggen.politiet.no/messages'
     headers = {'accept': 'text/plain'}
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -33,7 +33,7 @@ def get_incidents_by_municipality(municipality: str) -> str:
     if not municipality or not municipality.strip():
         return "Error: Municipality name cannot be empty."
     
-    url = 'https://api.politiet.no/politiloggen/v1/messages'
+    url = 'https://api.politiloggen.politiet.no/messages'
     headers = {'accept': 'text/plain'}
     params = {'Municipalities': municipality.strip()}
     try:
