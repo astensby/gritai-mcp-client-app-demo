@@ -6,7 +6,7 @@ requires-python = ">=3.10"
 dependencies = [
     "anthropic>=0.72.1",
     "fastmcp>=2.13.0.2",
-    "gradio>=5.49.1",
+    "gradio>=6.32.0,<7",
     "python-dotenv>=1.2.1",
     "claude-agent-sdk>=0.1.6",
     "anyio>=4.0.0",
@@ -14,4 +14,10 @@ dependencies = [
     "requests>=2.31.0",
     # Floor for gradio's transitive brotli: CVE-2026-111497 (pre-auth RCE) fixed in 1.2.1
     "brotli>=1.2.1",
+    # Floor for fastmcp's transitive mcp: GHSA-qx49-fqc8-xw99 (OAuth client sends credentials to an
+    # authorization server the MCP server picks) fixed in 1.30.0. Stay on 1.x (fastmcp 2.x needs <2).
+    "mcp>=1.30.0,<2",
+    # Floor for gradio's transitive pillow: 11.3.0 has ~100 OSV advisories, 13.0.0 has none.
+    # gradio 5 caps pillow<12, so this needs gradio 6. Pillow 13 needs Python 3.11+.
+    "pillow>=13.0.0; python_version >= '3.11'",
 ]

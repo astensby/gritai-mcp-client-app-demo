@@ -62,6 +62,15 @@ async def call_mcp_tool(client, tool_name: str, tool_input: dict):
         return f"Error executing tool {tool_name}: {str(e)}"
 
 
+def history_text(content) -> str:
+    """Gradio 6 hands history content back as a string or a list of {"type": "text", "text": ...} blocks."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text")
+    return ""
+
+
 async def chat_with_mcp(message: str, history: list):
     """Handle chat with Anthropic + MCP tool integration"""
     max_iterations = 10  # Prevent infinite loops
@@ -72,9 +81,11 @@ async def chat_with_mcp(message: str, history: list):
         async with Client(MCP_SERVER_PATH) as mcp_client:
             # Build conversation messages
             messages = []
-            for user_msg, assistant_msg in history:
-                messages.append({"role": "user", "content": user_msg})
-                messages.append({"role": "assistant", "content": assistant_msg})
+            # Gradio 6 Chatbot history is a list of {"role", "content"} dicts
+            for turn in history:
+                text = history_text(turn.get("content"))
+                if turn.get("role") in ("user", "assistant") and text:
+                    messages.append({"role": turn["role"], "content": text})
             messages.append({"role": "user", "content": message})
 
             # Get available MCP tools
@@ -142,10 +153,12 @@ def chat_wrapper(message: str, history: list):
     
     try:
         response = asyncio.run(chat_with_mcp(message, history))
-        history.append((message, response))
+        history.append({"role": "user", "content": message})
+        history.append({"role": "assistant", "content": response})
     except Exception as e:
         error_msg = f"An unexpected error occurred: {str(e)}"
-        history.append((message, error_msg))
+        history.append({"role": "user", "content": message})
+        history.append({"role": "assistant", "content": error_msg})
     
     return history
 
@@ -154,7 +167,7 @@ with gr.Blocks(title="MCP + Anthropic Demo") as demo:
     gr.Markdown("# AI Chat with MCP Integration")
     gr.Markdown("Chat with Claude powered by Anthropic API, with access to Norwegian Police Incidents via MCP server")
 
-    chatbot = gr.Chatbot(height=500, type="tuples")
+    chatbot = gr.Chatbot(height=500)
     msg = gr.Textbox(
         placeholder="Ask about police incidents in Norway...",
         container=False
